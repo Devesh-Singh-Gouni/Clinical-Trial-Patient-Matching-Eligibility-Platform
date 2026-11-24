@@ -1,0 +1,140 @@
+
+Table patients {
+  patient_id uuid [pk]
+  source_patient_id varchar(100) [unique]
+  first_name varchar(100)
+  last_name varchar(100)
+  birth_date date [not null]
+  death_date date
+  gender varchar(20)
+  created_at timestamp
+}
+
+Table diseases {
+  disease_id uuid [pk]
+  disease_name varchar(150) [not null]
+  code_system varchar(50)
+  disease_code varchar(50)
+  description text
+}
+
+Table conditions {
+  condition_id uuid [pk]
+  patient_id uuid [not null]
+  disease_id uuid [not null]
+  start_date date
+  end_date date
+}
+
+Table observations {
+  observation_id uuid [pk]
+  patient_id uuid [not null]
+  code varchar(50)
+  code_system varchar(50)
+  description varchar(200)
+  value_numeric decimal(12,4)
+  value_text text
+  unit varchar(50)
+  recorded_at timestamp
+  data_source varchar(50)
+}
+
+Table medications {
+  medication_id uuid [pk]
+  patient_id uuid [not null]
+  medication_code varchar(50)
+  medication_name varchar(200)
+  start_date date
+  end_date date
+}
+Table clinical_trials {
+  trial_id uuid [pk]
+  registry_id varchar(50) [unique]
+  title text [not null]
+  description text
+  phase varchar(50)
+  status varchar(50)
+  source_url text
+  raw_eligibility_text text
+  created_at timestamp
+}
+
+Table trial_conditions {
+  trial_id uuid [not null]
+  disease_id uuid [not null]
+
+  indexes {
+    (trial_id, disease_id) [pk]
+  }
+}
+
+Table eligibility_criteria {
+  criterion_id uuid [pk]
+  trial_id uuid [not null]
+  criterion_type varchar(20) [not null]
+  field_type varchar(30)
+  field_code varchar(100)
+  operator varchar(20)
+  value_numeric decimal(12,4)
+  value_text text
+  unit varchar(50)
+  lookback_days integer
+  description text
+}
+
+Table matching_runs {
+  run_id uuid [pk]
+  patient_id uuid [not null]
+  created_at timestamp
+  engine_version varchar(30)
+}
+
+Table matching_results {
+  result_id uuid [pk]
+  run_id uuid [not null]
+  trial_id uuid [not null]
+  status varchar(30)
+  match_score decimal(5,2)
+  evaluated_at timestamp
+
+  indexes {
+    (run_id, trial_id) [unique]
+  }
+}
+
+Table criterion_evaluations {
+  evaluation_id uuid [pk]
+  result_id uuid [not null]
+  criterion_id uuid [not null]
+  outcome varchar(20)
+  actual_value text
+  explanation text
+
+  indexes {
+    (result_id, criterion_id) [unique]
+  }
+}
+
+Ref: conditions.patient_id > patients.patient_id
+
+Ref: conditions.disease_id > diseases.disease_id
+
+Ref: observations.patient_id > patients.patient_id
+
+Ref: medications.patient_id > patients.patient_id
+
+Ref: trial_conditions.trial_id > clinical_trials.trial_id
+
+Ref: trial_conditions.disease_id > diseases.disease_id
+
+Ref: eligibility_criteria.trial_id > clinical_trials.trial_id
+
+Ref: matching_runs.patient_id > patients.patient_id
+
+Ref: matching_results.run_id > matching_runs.run_id
+
+Ref: matching_results.trial_id > clinical_trials.trial_id
+
+Ref: criterion_evaluations.result_id > matching_results.result_id
+
+Ref: criterion_evaluations.criterion_id > eligibility_criteria.criterion_id
